@@ -1,0 +1,17 @@
+{
+    "name": "jbuncle/simple-dic",
+    "description": "Simple Dependency Injection container focussing on auto injection.",
+    "type": "library",
+    "authors": [
+        {
+            "name": "James Buncle",
+            "email": "jbuncle@hotmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "SimpleDic\\": "src/"
+        }
+    },
+    "require": {}
+}
