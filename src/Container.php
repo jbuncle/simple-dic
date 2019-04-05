@@ -27,6 +27,8 @@ class Container {
      */
     private $factoryMethods = [];
 
+    private $typeMap = [];
+
     public function getInstance(string $class) {
         // TODO: add support for interfaces
         if (!array_key_exists($class, $this->instances)) {
@@ -34,12 +36,25 @@ class Container {
         }
         return $this->instances[$class];
     }
-
+    
+    /**
+     * Tell the container to use a specific type when another is requested.
+     *
+     * @param string $for The type we want to map
+     * @param string $type The type to use
+     */
+    public function addTypeMapping($for, $type) {
+        $this->typeMap[$for] = $type;
+    }
+    
     public function addFactory(string $class, callable $method) {
         $this->factoryMethods[$class] = $method;
     }
 
     private function createInstance(string $class) {
+        if (array_key_exists($class, $this->typeMap)) {
+            $class = $this->typeMap[$class];
+        }
         if ($this->hasFactory($class)) {
             return $this->createFromFactory($class);
         } else {
@@ -95,6 +110,7 @@ class Container {
      * @param ReflectionParameter[] $params
      */
     private function getArgsForParams(array $params): array {
+        // TODO: add support to ignore scalar typed, defaulted arguments
         $args = [];
         foreach ($params as $param) {
             if (!$param->hasType()) {
