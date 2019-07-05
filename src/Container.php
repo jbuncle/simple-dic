@@ -29,17 +29,11 @@ class Container implements ArgsInjector {
      */
     private $factoryStore = [];
 
-    /**
-     *
-     * @var string[]
-     */
-    private $typeStore;
     private $typeMapStore;
 
     private function __construct() {
         $this->instanceStore = new Util\InstanceStore();
         $this->factoryStore = new Util\FactoryStore($this);
-        $this->typeStore = new Util\TypeStore();
         $this->typeMapStore = new Util\TypeMapStore();
     }
 
@@ -76,7 +70,8 @@ class Container implements ArgsInjector {
      * @param string $type
      */
     public function addType(string $type): void {
-        $this->typeStore->addType($type);
+        // Add mapping to self
+        $this->typeMapStore->addTypeMapping($type, $type);
     }
 
     public function addFactory(callable $method, string $class = '') {
@@ -121,15 +116,10 @@ class Container implements ArgsInjector {
         if ($object !== null) {
             return $object;
         }
-        // Search for compatible defined type
-        $type = $this->typeStore->getSuitableType($class);
-        if ($type !== null) {
-            return $this->createInstance($type);
-        }
 
         // Look through type mappings for a suitable type
         $type = $this->typeMapStore->getSuitableMapping($class);
-        if ($type !== null) {
+        if ($type !== null && $type !== $class) {
             return $this->createInstance($type);
         }
 
