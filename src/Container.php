@@ -6,6 +6,7 @@
 
 namespace SimpleDic;
 
+use ArrayObject;
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionFunction;
@@ -20,7 +21,7 @@ use ReflectionParameter;
  */
 class Container {
 
-    private $instances = [];
+    private $instances;
 
     /**
      *
@@ -36,13 +37,15 @@ class Container {
     private $typeMap = [];
 
     private function __construct() {
-        // Add self
-        $this->types[get_class($this)] = $this;
+        $this->instances = new Util\InstanceStore();
+        $this->factoryMethods = new ArrayObject();
+        $this->types = new ArrayObject();
+        $this->typeMap = new ArrayObject();
     }
 
     public static function createContainer() {
         $container = new Container();
-        $container->instances[get_class($container)] = $container;
+        $container->instances->addInstance($container);
         return $container;
     }
 
@@ -50,10 +53,10 @@ class Container {
         if (!$this->typeExists($class)) {
             throw new InvalidArgumentException("Class '$class' class does not exist");
         }
-        if (!array_key_exists($class, $this->instances)) {
-            $this->instances[$class] = $this->createInstance($class);
+        if (!$this->instances->hasInstance($class)) {
+            $this->instances->addInstance($this->createInstance($class));
         }
-        return $this->instances[$class];
+        return $this->instances->getSuitableInstance($class);
     }
 
     /**
@@ -132,7 +135,7 @@ class Container {
         }
 
         // Search for an existing, compatible instance
-        $object = $this->findSuitableObject($this->instances, $class);
+        $object = $this->instances->getSuitableInstance($class);
         if ($object !== null) {
             return $object;
         }
@@ -143,26 +146,23 @@ class Container {
         }
 
         // Look through type mappings for a suitable type
-        $type = $this->findSuitableType(array_keys($this->typeMap), $class);
+        $type = $this->findSuitableType($this->getKeys($this->typeMap), $class);
         if ($type !== null) {
             return $this->createInstance($type);
         }
 
-
         return $this->createNewInstance($class);
     }
 
-    private function findSuitableObject(array $objects, string $class) {
-        foreach ($objects as $object) {
-            if (is_a($object, $class)) {
-                return $object;
-            }
+    private function getKeys(\IteratorAggregate $objects): ArrayObject {
+        $arr = new \ArrayObject();
+        foreach ($objects as $key => $value) {
+            $arr[] = $key;
         }
-
-        return null;
+        return $arr;
     }
 
-    private function findSuitableType(array $types, string $class): ?string {
+    private function findSuitableType(ArrayObject $types, string $class): ?string {
         foreach ($types as $type) {
             if (is_subclass_of($type, $class)) {
                 return $type;
