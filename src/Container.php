@@ -33,13 +33,13 @@ class Container implements ArgsInjector {
      *
      * @var string[]
      */
-    private $types = [];
+    private $typeStore;
     private $typeMapStore;
 
     private function __construct() {
         $this->instanceStore = new Util\InstanceStore();
         $this->factoryStore = new Util\FactoryStore($this);
-        $this->types = new ArrayObject();
+        $this->typeStore = new Util\TypeStore();
         $this->typeMapStore = new Util\TypeMapStore();
     }
 
@@ -76,10 +76,7 @@ class Container implements ArgsInjector {
      * @param string $type
      */
     public function addType(string $type): void {
-        if (!$this->typeExists($type)) {
-            throw new InvalidArgumentException("Type '$type' class does not exist");
-        }
-        $this->types[] = $type;
+        $this->typeStore->addType($type);
     }
 
     public function addFactory(callable $method, string $class = '') {
@@ -125,7 +122,7 @@ class Container implements ArgsInjector {
             return $object;
         }
         // Search for compatible defined type
-        $type = $this->findSuitableType($this->types, $class);
+        $type = $this->typeStore->getSuitableType($class);
         if ($type !== null) {
             return $this->createInstance($type);
         }
@@ -137,16 +134,6 @@ class Container implements ArgsInjector {
         }
 
         return $this->createNewInstance($class);
-    }
-
-    private function findSuitableType(ArrayObject $types, string $class): ?string {
-        foreach ($types as $type) {
-            if (is_subclass_of($type, $class)) {
-                return $type;
-            }
-        }
-
-        return null;
     }
 
     private function createNewInstance(string $class) {
