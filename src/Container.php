@@ -6,9 +6,10 @@
 
 namespace SimpleDic;
 
-use Exception;
+use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionFunction;
+use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionParameter;
 
@@ -47,7 +48,7 @@ class Container {
 
     public function getInstance(string $class) {
         if (!$this->typeExists($class)) {
-            throw new \InvalidArgumentException("Class '$class' class does not exist");
+            throw new InvalidArgumentException("Class '$class' class does not exist");
         }
         if (!array_key_exists($class, $this->instances)) {
             $this->instances[$class] = $this->createInstance($class);
@@ -74,10 +75,10 @@ class Container {
      */
     public function addTypeMapping(string $for, string $type, bool $overwrite = true): void {
         if (!$this->typeExists($for)) {
-            throw new \InvalidArgumentException("For '$for' class does not exist");
+            throw new InvalidArgumentException("For '$for' class does not exist");
         }
         if (!$this->typeExists($type)) {
-            throw new \InvalidArgumentException("Type '$type' class does not exist");
+            throw new InvalidArgumentException("Type '$type' class does not exist");
         }
 
         if ($overwrite || !array_key_exists($for, $this->typeMap)) {
@@ -92,7 +93,7 @@ class Container {
      */
     public function addType(string $type): void {
         if (!$this->typeExists($type)) {
-            throw new \InvalidArgumentException("Type '$type' class does not exist");
+            throw new InvalidArgumentException("Type '$type' class does not exist");
         }
         $this->types[] = $type;
     }
@@ -104,10 +105,10 @@ class Container {
             $returnType = $reflection->getReturnType();
             $methodName = $reflection->getName();
             if ($returnType === null) {
-                throw new \InvalidArgumentException("Can't establish type for factory '$methodName'");
+                throw new InvalidArgumentException("Can't establish type for factory '$methodName'");
             }
             if (!$this->typeExists($returnType)) {
-                throw new \InvalidArgumentException("Return type '$returnType' is not a class");
+                throw new InvalidArgumentException("Return type '$returnType' is not a class");
             }
             $class = (string) $returnType;
         }
@@ -212,7 +213,7 @@ class Container {
         return $value;
     }
 
-    private function callableToReflection(callable $callable): \ReflectionFunctionAbstract {
+    private function callableToReflection(callable $callable): ReflectionFunctionAbstract {
         if (is_array($callable)) {
             return new ReflectionMethod($callable[0], $callable[1]);
         } else {
@@ -270,7 +271,7 @@ class Container {
             }
             try {
                 $args[] = $this->getInstance($paramType->getName());
-            } catch (\SimpleDic\ContainerException $ex) {
+            } catch (ContainerException $ex) {
                 if ($param->isOptional()) {
                     // End of args
                     break;
