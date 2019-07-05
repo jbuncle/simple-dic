@@ -9,12 +9,12 @@ cache:
 
 lint_php:
     stage: check
-    image: docker.jbuncle.co.uk/jbuncle/php-docker
+    image: cyberpearuk/php-build-docker
     script: phplint
 
 deploy_dev:
     stage: deploy
-    image: docker.jbuncle.co.uk/jbuncle/php-docker
+    image: cyberpearuk/php-build-docker
     script:
         - rm -rf nbproject
         - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
@@ -37,7 +37,7 @@ tag:
 
 deploy_tag:
     stage: deploy
-    image: docker.jbuncle.co.uk/jbuncle/php-docker
+    image: cyberpearuk/php-build-docker
     script:
         - rm -rf nbproject
         - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
