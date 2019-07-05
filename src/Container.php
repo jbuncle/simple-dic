@@ -19,33 +19,33 @@ use ReflectionParameter;
  *
  * @author James Buncle <jbuncle@hotmail.com>
  */
-class Container {
+class Container implements ArgsInjector {
 
-    private $instances;
+    private $instanceStore;
 
     /**
      *
      * @var callable
      */
-    private $factoryMethods = [];
+    private $factoryStore = [];
 
     /**
      *
      * @var string[]
      */
     private $types = [];
-    private $typeMap = [];
+    private $typeMapStore;
 
     private function __construct() {
-        $this->instances = new Util\InstanceStore();
-        $this->factoryMethods = new ArrayObject();
+        $this->instanceStore = new Util\InstanceStore();
+        $this->factoryStore = new Util\FactoryStore($this);
         $this->types = new ArrayObject();
-        $this->typeMap = new ArrayObject();
+        $this->typeMapStore = new Util\TypeMapStore();
     }
 
     public static function createContainer() {
         $container = new Container();
-        $container->instances->addInstance($container);
+        $container->instanceStore->addInstance($container);
         return $container;
     }
 
@@ -53,10 +53,10 @@ class Container {
         if (!$this->typeExists($class)) {
             throw new InvalidArgumentException("Class '$class' class does not exist");
         }
-        if (!$this->instances->hasInstance($class)) {
-            $this->instances->addInstance($this->createInstance($class));
+        if (!$this->instanceStore->hasInstance($class)) {
+            $this->instanceStore->addInstance($this->createInstance($class));
         }
-        return $this->instances->getSuitableInstance($class);
+        return $this->instanceStore->getSuitableInstance($class);
     }
 
     /**
@@ -68,25 +68,6 @@ class Container {
      */
     private function typeExists(string $type): bool {
         return interface_exists($type) || class_exists($type);
-    }
-
-    /**
-     * Tell the container to use a specific type when another is requested.
-     *
-     * @param string $for The type we want to map
-     * @param string $type The type to use
-     */
-    public function addTypeMapping(string $for, string $type, bool $overwrite = true): void {
-        if (!$this->typeExists($for)) {
-            throw new InvalidArgumentException("For '$for' class does not exist");
-        }
-        if (!$this->typeExists($type)) {
-            throw new InvalidArgumentException("Type '$type' class does not exist");
-        }
-
-        if ($overwrite || !array_key_exists($for, $this->typeMap)) {
-            $this->typeMap[$for] = $type;
-        }
     }
 
     /**
@@ -117,16 +98,20 @@ class Container {
         }
 
         //Add to factory list
-        $this->factoryMethods[$class] = $method;
+        $this->factoryStore->add($class, $method);
 
         // Make container aware of type
         $this->addType($class);
     }
 
+    public function addTypeMapping(string $for, string $type, bool $overwrite = true): void {
+        $this->typeMapStore->addTypeMapping($for, $type, $overwrite);
+    }
+
     private function createInstance(string $class) {
         // Check if given class is a mapped class
-        if (\array_key_exists($class, $this->typeMap)) {
-            $mappedClass = $this->typeMap[$class];
+        if ($this->typeMapStore->hasMapping($class)) {
+            $mappedClass = $this->typeMapStore->getSuitableMapping($class);
 
             // Ignore mapping to the same 
             if ($mappedClass !== $class) {
@@ -135,7 +120,7 @@ class Container {
         }
 
         // Search for an existing, compatible instance
-        $object = $this->instances->getSuitableInstance($class);
+        $object = $this->instanceStore->getSuitableInstance($class);
         if ($object !== null) {
             return $object;
         }
@@ -146,20 +131,12 @@ class Container {
         }
 
         // Look through type mappings for a suitable type
-        $type = $this->findSuitableType($this->getKeys($this->typeMap), $class);
+        $type = $this->typeMapStore->getSuitableMapping($class);
         if ($type !== null) {
             return $this->createInstance($type);
         }
 
         return $this->createNewInstance($class);
-    }
-
-    private function getKeys(\IteratorAggregate $objects): ArrayObject {
-        $arr = new \ArrayObject();
-        foreach ($objects as $key => $value) {
-            $arr[] = $key;
-        }
-        return $arr;
     }
 
     private function findSuitableType(ArrayObject $types, string $class): ?string {
@@ -174,43 +151,11 @@ class Container {
 
     private function createNewInstance(string $class) {
 
-        if ($this->hasFactory($class)) {
-            return $this->createFromFactory($class);
+        if ($this->factoryStore->hasFactory($class)) {
+            return $this->factoryStore->createFromFactory($class);
         } else {
             return $this->autoCreateInstance($class);
         }
-    }
-
-    private function createFromFactory(string $class) {
-        $callable = $this->factoryMethods[$class];
-
-        // TODO: check callback return type
-        if (is_array($callable)) {
-            if (is_string($callable[0])) {
-                // Handle static
-                $reflectionMethod = new ReflectionMethod($callable[0], $callable[1]);
-                $params = $reflectionMethod->getParameters();
-                $args = $this->getArgsForParams($params);
-
-                $value = $reflectionMethod->invokeArgs(null, $args);
-            } else {
-                // Handle non-static
-                $reflectionMethod = new ReflectionMethod(get_class($callable[0]), $callable[1]);
-                $params = $reflectionMethod->getParameters();
-                $args = $this->getArgsForParams($params);
-
-                $value = $reflectionMethod->invokeArgs($callable[0], $args);
-            }
-        } else {
-            $reflectionFunction = new ReflectionFunction($callable);
-            $params = $reflectionFunction->getParameters();
-            $args = $this->getArgsForParams($params);
-            $value = $reflectionFunction->invokeArgs($args);
-        }
-        if (!is_a($value, $class)) {
-            throw new ContainerException("Factory for class '$class' returned value of incorrect type.");
-        }
-        return $value;
     }
 
     private function callableToReflection(callable $callable): ReflectionFunctionAbstract {
@@ -219,10 +164,6 @@ class Container {
         } else {
             return new ReflectionFunction($callable);
         }
-    }
-
-    private function hasFactory(string $class): bool {
-        return \array_key_exists($class, $this->factoryMethods);
     }
 
     private function autoCreateInstance(string $class) {
@@ -248,7 +189,7 @@ class Container {
      * 
      * @param ReflectionParameter[] $params
      */
-    private function getArgsForParams(array $params): array {
+    public function getArgsForParams(array $params): array {
         // TODO: add support to ignore scalar typed, defaulted arguments
         $args = [];
         foreach ($params as $param) {
