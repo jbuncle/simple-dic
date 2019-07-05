@@ -27,8 +27,11 @@ class Container {
      */
     private $factoryMethods = [];
 
+    /**
+     *
+     * @var string[]
+     */
     private $types = [];
-
     private $typeMap = [];
 
     private function __construct() {
@@ -51,10 +54,18 @@ class Container {
         }
         return $this->instances[$class];
     }
-    
-    private function typeExists(string $type) {
+
+    /**
+     * Check if the given type actually exists.
+     *
+     * @param string $type The class or interface name (inc. namespace)
+     *
+     * @return bool
+     */
+    private function typeExists(string $type): bool {
         return interface_exists($type) || class_exists($type);
     }
+
     /**
      * Tell the container to use a specific type when another is requested.
      *
@@ -101,43 +112,63 @@ class Container {
             $class = (string) $returnType;
         }
 
-        // Make container aware of type
-        $this->addType($class);
-
         //Add to factory list
         $this->factoryMethods[$class] = $method;
+
+        // Make container aware of type
+        $this->addType($class);
     }
 
     private function createInstance(string $class) {
+        // Check if given class is a mapped class
         if (\array_key_exists($class, $this->typeMap)) {
             $mappedClass = $this->typeMap[$class];
 
-            // Ignore mapping to the same type
+            // Ignore mapping to the same 
             if ($mappedClass !== $class) {
                 return $this->createInstance($mappedClass);
             }
         }
 
         // Search for an existing, compatible instance
-        foreach ($this->instances as $instance) {
-            if (\is_a($instance, $class)) {
-                return $instance;
-            }
+        $object = $this->findSuitableObject($this->instances, $class);
+        if ($object !== null) {
+            return $object;
         }
-        // Search for compatible type
-        foreach ($this->types as $type) {
-            if (is_subclass_of($type, $class)) {
-                return $this->createInstance($type);
-            }
+        // Search for compatible defined type
+        $type = $this->findSuitableType($this->types, $class);
+        if ($type !== null) {
+            return $this->createInstance($type);
         }
+
         // Look through type mappings for a suitable type
-        foreach (array_keys($this->typeMap) as $type) {
-            if (is_subclass_of($type, $class)) {
-                return $this->createInstance($type);
+        $type = $this->findSuitableType(array_keys($this->typeMap), $class);
+        if ($type !== null) {
+            return $this->createInstance($type);
+        }
+
+
+        return $this->createNewInstance($class);
+    }
+
+    private function findSuitableObject(array $objects, string $class): ?object {
+        foreach ($objects as $object) {
+            if (is_a($object, $class)) {
+                return $object;
             }
         }
 
-        return $this->createNewInstance($class);
+        return null;
+    }
+
+    private function findSuitableType(array $types, string $class): ?string {
+        foreach ($types as $type) {
+            if (is_subclass_of($type, $class)) {
+                return $type;
+            }
+        }
+
+        return null;
     }
 
     private function createNewInstance(string $class) {
@@ -154,12 +185,21 @@ class Container {
 
         // TODO: check callback return type
         if (is_array($callable)) {
-            $reflectionMethod = new ReflectionMethod($callable[0], $callable[1]);
-            $params = $reflectionMethod->getParameters();
-            $args = $this->getArgsForParams($params);
+            if (is_string($callable[0])) {
+                // Handle static
+                $reflectionMethod = new ReflectionMethod($callable[0], $callable[1]);
+                $params = $reflectionMethod->getParameters();
+                $args = $this->getArgsForParams($params);
 
-            // TODO: support for non-static factory methods
-            $value = $reflectionMethod->invokeArgs(null, $args);
+                $value = $reflectionMethod->invokeArgs(null, $args);
+            } else {
+                // Handle non-static
+                $reflectionMethod = new ReflectionMethod(get_class($callable[0]), $callable[1]);
+                $params = $reflectionMethod->getParameters();
+                $args = $this->getArgsForParams($params);
+
+                $value = $reflectionMethod->invokeArgs($callable[0], $args);
+            }
         } else {
             $reflectionFunction = new ReflectionFunction($callable);
             $params = $reflectionFunction->getParameters();
@@ -167,7 +207,7 @@ class Container {
             $value = $reflectionFunction->invokeArgs($args);
         }
         if (!is_a($value, $class)) {
-            throw new Exception("Factory for class '$class' returned value of incorrect type.");
+            throw new ContainerException("Factory for class '$class' returned value of incorrect type.");
         }
         return $value;
     }
@@ -187,6 +227,9 @@ class Container {
     private function autoCreateInstance(string $class) {
         $reflection = new ReflectionClass($class);
 
+        if ($reflection->isInterface()) {
+            throw new ContainerException("Cannot create instance from interface '$class'");
+        }
         /* @var $constructor ReflectionMethod */
         $constructor = $reflection->getConstructor();
         if ($constructor === null) {
@@ -209,14 +252,31 @@ class Container {
         $args = [];
         foreach ($params as $param) {
             if (!$param->hasType()) {
-                throw new Exception("Can't auto inject param {$param->getName()}");
+                if ($param->isOptional()) {
+                    // End of args
+                    break;
+                }
+                throw new ContainerException("Can't auto inject param {$param->getName()}");
             }
             $paramType = $param->getClass();
             if (!$paramType) {
+                // Handle defaults
+                if ($param->isOptional()) {
+                    // End of args
+                    break;
+                }
                 $paramName = $param->getName();
-                throw new Exception("Missing type for param '$paramName'");
+                throw new ContainerException("Missing type for param '$paramName'");
             }
-            $args[] = $this->getInstance($paramType->getName());
+            try {
+                $args[] = $this->getInstance($paramType->getName());
+            } catch (\SimpleDic\ContainerException $ex) {
+                if ($param->isOptional()) {
+                    // End of args
+                    break;
+                }
+                throw $ex;
+            }
         }
         return $args;
     }
