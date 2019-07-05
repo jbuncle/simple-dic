@@ -152,7 +152,7 @@ class Container {
         return $this->createNewInstance($class);
     }
 
-    private function findSuitableObject(array $objects, string $class): ?object {
+    private function findSuitableObject(array $objects, string $class) {
         foreach ($objects as $object) {
             if (is_a($object, $class)) {
                 return $object;
