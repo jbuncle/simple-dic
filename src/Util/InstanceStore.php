@@ -19,25 +19,33 @@ class InstanceStore {
         $this->instances = new \ArrayObject();
     }
 
-    public function addInstance($instance) {
+    public function addInstance($instance): void {
         $class = get_class($instance);
         $this->instances[$class] = $instance;
     }
 
-    public function hasInstance(string $class) {
+    private function hasInstance(string $class): bool {
         return array_key_exists($class, $this->instances);
     }
 
     private function getInstance(string $class) {
-        return $this->instances[$class];
+        if ($this->hasInstance($class)) {
+            return $this->instances[$class];
+        }
+
+        return null;
     }
 
     public function getSuitableInstance(string $class) {
-        if ($this->hasInstance($class)) {
-            return $this->getInstance($class);
+        $instance = $this->getInstance($class);
+        
+        if ($instance !== null) {
+            return $instance;
         }
+
         foreach ($this->instances as $instance) {
             if (is_a($instance, $class)) {
+                // Add the instance so we can get it directly next time
                 $this->addInstance($instance, $class);
                 return $instance;
             }

@@ -16,25 +16,28 @@ use InvalidArgumentException;
  */
 class TypeMapStore {
 
-    private $typeMap;
+    /**
+     *
+     * @var \ArrayObject
+     */
+    private $typeMappings;
+
+    /**
+     *
+     * @var \ArrayObject
+     */
+    private $keys;
 
     public function __construct() {
-        $this->typeMap = new ArrayObject();
-    }
-
-    public function hasMapping(string $class): bool {
-        return \array_key_exists($class, $this->typeMap);
-    }
-
-    private function getMapping(string $class): string {
-        return $this->typeMap[$class];
+        $this->typeMappings = new ArrayObject();
+        $this->keys = new \ArrayObject();
     }
 
     public function getSuitableMapping(string $class): ?string {
         if ($this->hasMapping($class)) {
             return $this->getMapping($class);
         }
-        return $this->findSuitableType($this->getKeys($this->typeMap), $class);
+        return TypeUtility::findSubType($this->keys, $class);
     }
 
     /**
@@ -44,52 +47,25 @@ class TypeMapStore {
      * @param string $type The type to use
      */
     public function addTypeMapping(string $for, string $type, bool $overwrite = true): void {
-        if (!$this->typeExists($for)) {
+        if (!TypeUtility::typeExists($for)) {
             throw new InvalidArgumentException("For '$for' class does not exist");
         }
-        if (!$this->typeExists($type)) {
+        if (!TypeUtility::typeExists($type)) {
             throw new InvalidArgumentException("Type '$type' class does not exist");
         }
 
-        if ($overwrite || !array_key_exists($for, $this->typeMap)) {
-            $this->typeMap[$for] = $type;
+        if ($overwrite || !array_key_exists($for, $this->typeMappings)) {
+            $this->keys[] = $for;
+            $this->typeMappings[$for] = $type;
         }
     }
 
-    /**
-     * TODO: Move to util (and share)
-     * Check if the given type actually exists.
-     *
-     * @param string $type The class or interface name (inc. namespace)
-     *
-     * @return bool
-     */
-    private function typeExists(string $type): bool {
-        return interface_exists($type) || class_exists($type);
+    private function hasMapping(string $class): bool {
+        return \array_key_exists($class, $this->typeMappings);
     }
 
-    /**
-     * TODO: Move to util and share
-     * @param \SimpleDic\Util\ArrayObject $types
-     * @param string $class
-     * @return string|null
-     */
-    private function findSuitableType(ArrayObject $types, string $class): ?string {
-        foreach ($types as $type) {
-            if (is_subclass_of($type, $class)) {
-                return $type;
-            }
-        }
-
-        return null;
-    }
-
-    private function getKeys(\IteratorAggregate $objects): ArrayObject {
-        $arr = new \ArrayObject();
-        foreach ($objects as $key => $value) {
-            $arr[] = $key;
-        }
-        return $arr;
+    private function getMapping(string $class): string {
+        return $this->typeMappings[$class];
     }
 
 }

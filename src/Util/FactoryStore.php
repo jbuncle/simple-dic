@@ -6,7 +6,10 @@
 
 namespace SimpleDic\Util;
 
+use ArrayObject;
+use InvalidArgumentException;
 use ReflectionFunction;
+use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use SimpleDic\ArgsInjector;
 use SimpleDic\ContainerException;
@@ -32,7 +35,7 @@ class FactoryStore {
 
     public function __construct(ArgsInjector $argsInjector) {
         $this->argsInjector = $argsInjector;
-        $this->factoryMethods = new \ArrayObject();
+        $this->factoryMethods = new ArrayObject();
     }
 
     public function createFromFactory(string $class) {
@@ -71,10 +74,25 @@ class FactoryStore {
         return $this->factoryStore[$class];
     }
 
-    public function add(string $class, callable $method) {
+    public function add(callable $method, string $class): string {
+
+        if (empty($class)) {
+            $reflection = $this->callableToReflection($method);
+            $returnType = $reflection->getReturnType();
+            $methodName = $reflection->getName();
+            if ($returnType === null) {
+                throw new InvalidArgumentException("Can't establish type for factory '$methodName'");
+            }
+            if (!TypeUtility::typeExists($returnType)) {
+                throw new InvalidArgumentException("Return type '$returnType' is not a class");
+            }
+            $class = (string) $returnType;
+        }
 
         //Add to factory list
         $this->factoryMethods[$class] = $method;
+
+        return $class;
     }
 
     public function hasFactory(string $class): bool {
@@ -83,6 +101,14 @@ class FactoryStore {
 
     private function getArgsForParams(array $params): array {
         return $this->argsInjector->getArgsForParams($params);
+    }
+
+    private function callableToReflection(callable $callable): ReflectionFunctionAbstract {
+        if (TypeUtility::isCallableAMethod($callable)) {
+            return new ReflectionMethod($callable[0], $callable[1]);
+        } else {
+            return new ReflectionFunction($callable);
+        }
     }
 
 }

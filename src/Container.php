@@ -6,13 +6,14 @@
 
 namespace SimpleDic;
 
-use ArrayObject;
 use InvalidArgumentException;
 use ReflectionClass;
-use ReflectionFunction;
-use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionParameter;
+use SimpleDic\Util\FactoryStore;
+use SimpleDic\Util\InstanceStore;
+use SimpleDic\Util\TypeMapStore;
+use SimpleDic\Util\TypeUtility;
 
 /**
  * Container
@@ -21,20 +22,28 @@ use ReflectionParameter;
  */
 class Container implements ArgsInjector {
 
+    /**
+     *
+     * @var InstanceStore
+     */
     private $instanceStore;
 
     /**
      *
-     * @var callable
+     * @var FactoryStore
      */
     private $factoryStore = [];
 
+    /**
+     *
+     * @var TypeMapStore
+     */
     private $typeMapStore;
 
     private function __construct() {
-        $this->instanceStore = new Util\InstanceStore();
-        $this->factoryStore = new Util\FactoryStore($this);
-        $this->typeMapStore = new Util\TypeMapStore();
+        $this->instanceStore = new InstanceStore();
+        $this->factoryStore = new FactoryStore($this);
+        $this->typeMapStore = new TypeMapStore();
     }
 
     public static function createContainer() {
@@ -44,24 +53,16 @@ class Container implements ArgsInjector {
     }
 
     public function getInstance(string $class) {
-        if (!$this->typeExists($class)) {
+        if (!TypeUtility::typeExists($class)) {
             throw new InvalidArgumentException("Class '$class' class does not exist");
         }
-        if (!$this->instanceStore->hasInstance($class)) {
-            $this->instanceStore->addInstance($this->createInstance($class));
+        $suitableInstance = $this->instanceStore->getSuitableInstance($class);
+        if ($suitableInstance === null) {
+            $instance = $this->createInstance($class);
+            $this->instanceStore->addInstance($instance);
+            return $instance;
         }
-        return $this->instanceStore->getSuitableInstance($class);
-    }
-
-    /**
-     * Check if the given type actually exists.
-     *
-     * @param string $type The class or interface name (inc. namespace)
-     *
-     * @return bool
-     */
-    private function typeExists(string $type): bool {
-        return interface_exists($type) || class_exists($type);
+        return $suitableInstance;
     }
 
     /**
@@ -76,21 +77,8 @@ class Container implements ArgsInjector {
 
     public function addFactory(callable $method, string $class = '') {
 
-        if (empty($class)) {
-            $reflection = $this->callableToReflection($method);
-            $returnType = $reflection->getReturnType();
-            $methodName = $reflection->getName();
-            if ($returnType === null) {
-                throw new InvalidArgumentException("Can't establish type for factory '$methodName'");
-            }
-            if (!$this->typeExists($returnType)) {
-                throw new InvalidArgumentException("Return type '$returnType' is not a class");
-            }
-            $class = (string) $returnType;
-        }
-
         //Add to factory list
-        $this->factoryStore->add($class, $method);
+        $class = $this->factoryStore->add($method, $class);
 
         // Make container aware of type
         $this->addType($class);
@@ -102,13 +90,10 @@ class Container implements ArgsInjector {
 
     private function createInstance(string $class) {
         // Check if given class is a mapped class
-        if ($this->typeMapStore->hasMapping($class)) {
-            $mappedClass = $this->typeMapStore->getSuitableMapping($class);
-
-            // Ignore mapping to the same 
-            if ($mappedClass !== $class) {
-                return $this->createInstance($mappedClass);
-            }
+        $mappedClass = $this->typeMapStore->getSuitableMapping($class);
+        // Ignore mapping to the same 
+        if ($mappedClass !== null && $mappedClass !== $class) {
+            return $this->createInstance($mappedClass);
         }
 
         // Search for an existing, compatible instance
@@ -132,14 +117,6 @@ class Container implements ArgsInjector {
             return $this->factoryStore->createFromFactory($class);
         } else {
             return $this->autoCreateInstance($class);
-        }
-    }
-
-    private function callableToReflection(callable $callable): ReflectionFunctionAbstract {
-        if (is_array($callable)) {
-            return new ReflectionMethod($callable[0], $callable[1]);
-        } else {
-            return new ReflectionFunction($callable);
         }
     }
 
