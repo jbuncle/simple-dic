@@ -13,6 +13,10 @@ namespace SimpleDic\Util;
  */
 class InstanceStore {
 
+    /**
+     * Map of instances.
+     * @var ArrayObject
+     */
     private $instances;
 
     public function __construct() {
@@ -36,6 +40,13 @@ class InstanceStore {
         return null;
     }
 
+    /**
+     * Find an instance which is either of the given type (class name), extends it,
+     * or implements it.
+     *  
+     * @param string $class
+     * @return type
+     */
     public function getSuitableInstance(string $class) {
         $instance = $this->getInstance($class);
         

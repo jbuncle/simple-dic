@@ -20,7 +20,7 @@ use SimpleDic\Util\TypeUtility;
  *
  * @author James Buncle <jbuncle@hotmail.com>
  */
-class Container implements ArgsInjector {
+class Container implements ArgsInjector, ContainerInterface {
 
     /**
      *
@@ -47,34 +47,62 @@ class Container implements ArgsInjector {
     }
 
     public static function createContainer() {
-        $container = new Container();
+        $container = new self();
+        // Add the container itself.
         $container->instanceStore->addInstance($container);
         return $container;
     }
 
+    /**
+     * Get an instance of the given class name.
+     *
+     * @param string $class The class name.
+     * @return mixed
+     * @throws InvalidArgumentException If the class name is for a non-existing type
+     */
     public function getInstance(string $class) {
         if (!TypeUtility::typeExists($class)) {
             throw new InvalidArgumentException("Class '$class' class does not exist");
         }
+        // Attempt to find an existing suitable instance
         $suitableInstance = $this->instanceStore->getSuitableInstance($class);
-        if ($suitableInstance === null) {
-            $instance = $this->createInstance($class);
-            $this->instanceStore->addInstance($instance);
-            return $instance;
+        if ($suitableInstance !== null) {
+            return $suitableInstance;
         }
-        return $suitableInstance;
+        // Create a new instance
+        $instance = $this->createInstance($class);
+        // Store the instance for next time the class is requested
+        $this->instanceStore->addInstance($instance);
+
+        return $instance;
     }
 
     /**
-     * Make the container aware of given type, to use if needed.
+     * Make the container aware of given type to use if needed.
+     * 
+     * This allows a quick and easy way to make the container aware of an instance
+     * to use. For example, when an interface is used you can declare the implementing
+     * class.
+     * 
+     * @deprecated Use addTypeMapping to be explicit of the types
      *
      * @param string $type
      */
     public function addType(string $type): void {
         // Add mapping to self
-        $this->typeMapStore->addTypeMapping($type, $type);
+        $this->addTypeMapping($type, $type);
     }
 
+    /**
+     * Add a factory method for the container to use when looking up a type.
+     * 
+     * The factory method's (callback's) parameters will be autowired.
+     * 
+     * If 'class' isn't defined, the return type will be looked up.
+     * 
+     * @param callable $method The callback.
+     * @param string   $class  The return type (the type the callback provides).
+     */
     public function addFactory(callable $method, string $class = '') {
 
         //Add to factory list
@@ -84,6 +112,16 @@ class Container implements ArgsInjector {
         $this->addType($class);
     }
 
+    /**
+     * Tell the container to use the class defined in 'type', when the class 'for'
+     * is defined.
+     *
+     * @param string $for     The class to map/alias
+     * @param string $type    The type to use
+     * @param bool $overwrite Whether to overwrite an existing mapping for 'for'
+     *
+     * @return void
+     */
     public function addTypeMapping(string $for, string $type, bool $overwrite = true): void {
         $this->typeMapStore->addTypeMapping($for, $type, $overwrite);
     }
@@ -91,7 +129,8 @@ class Container implements ArgsInjector {
     private function createInstance(string $class) {
         // Check if given class is a mapped class
         $mappedClass = $this->typeMapStore->getSuitableMapping($class);
-        // Ignore mapping to the same 
+
+        // Ignore mapping to the same (prevent infinite recursion)
         if ($mappedClass !== null && $mappedClass !== $class) {
             return $this->createInstance($mappedClass);
         }
@@ -99,12 +138,14 @@ class Container implements ArgsInjector {
         // Search for an existing, compatible instance
         $object = $this->instanceStore->getSuitableInstance($class);
         if ($object !== null) {
+            // Found existing instance
             return $object;
         }
 
         // Look through type mappings for a suitable type
         $type = $this->typeMapStore->getSuitableMapping($class);
         if ($type !== null && $type !== $class) {
+            // Create instance of mapped type
             return $this->createInstance($type);
         }
 
@@ -116,11 +157,18 @@ class Container implements ArgsInjector {
         if ($this->factoryStore->hasFactory($class)) {
             return $this->factoryStore->createFromFactory($class);
         } else {
-            return $this->autoCreateInstance($class);
+            return $this->autowireInstance($class);
         }
     }
 
-    private function autoCreateInstance(string $class) {
+    /**
+     * Create instance of given class.
+     *
+     * @param string $class
+     * @return type
+     * @throws ContainerException
+     */
+    private function autowireInstance(string $class) {
         $reflection = new ReflectionClass($class);
 
         if ($reflection->isInterface()) {
@@ -140,7 +188,8 @@ class Container implements ArgsInjector {
     }
 
     /**
-     * 
+     * Get instances for given array of ReflectionParameters.
+     *
      * @param ReflectionParameter[] $params
      */
     public function getArgsForParams(array $params): array {
@@ -149,9 +198,10 @@ class Container implements ArgsInjector {
         foreach ($params as $param) {
             if (!$param->hasType()) {
                 if ($param->isOptional()) {
-                    // End of args
+                    // No type, but optional (allowed but treated as end of arguments)
                     break;
                 }
+                // Non-optional and can't create instance
                 throw new ContainerException("Can't auto inject param {$param->getName()}");
             }
             $paramType = $param->getClass();
