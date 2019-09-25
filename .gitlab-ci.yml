@@ -1,6 +1,7 @@
 
 stages:
     - check
+    - test
     - deploy
     
 cache:
@@ -12,24 +13,19 @@ lint_php:
     image: cyberpearuk/php-build-docker
     script: phplint
 
-deploy_dev:
-    stage: deploy
+phpunit:
+    stage: test
     image: cyberpearuk/php-build-docker
     script:
-        - rm -rf nbproject
         - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
-        - composer install --no-dev
-        - composer nexus-push --url=https://nexus.jbuncle.co.uk/repository/composer-private/ --username=composer-publisher --password=$NEXUS_PASS dev-$CI_COMMIT_REF_NAME
-    only:
-        refs:
-            - master
+        - composer install
+        - vendor/bin/phpunit --configuration phpunit.xml --coverage-text --colors=never
 
 tag:
     stage: deploy
     image: docker.jbuncle.co.uk/jbuncle/php-autosemver
     script:
         - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
-        - composer install
         - tag
     only:
         refs:
