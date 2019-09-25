@@ -49,7 +49,7 @@ class Container implements ArgsInjector, ContainerInterface {
     public static function createContainer() {
         $container = new self();
         // Add the container itself.
-        $container->instanceStore->addInstance($container);
+        $container->instanceStore->addInstance(get_class($container), $container);
         return $container;
     }
 
@@ -71,8 +71,8 @@ class Container implements ArgsInjector, ContainerInterface {
         }
         // Create a new instance
         $instance = $this->createInstance($class);
-        // Store the instance for next time the class is requested
-        $this->instanceStore->addInstance($instance);
+        
+        $this->instanceStore->addInstance($class, $instance);
 
         return $instance;
     }
@@ -104,10 +104,8 @@ class Container implements ArgsInjector, ContainerInterface {
      * @param string   $class  The return type (the type the callback provides).
      */
     public function addFactory(callable $method, string $class = '') {
-
-        //Add to factory list
+        // Add to factory store
         $class = $this->factoryStore->add($method, $class);
-
         // Make container aware of type
         $this->addType($class);
     }

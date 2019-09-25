@@ -23,7 +23,7 @@ class InstanceStore {
         $this->instances = new \ArrayObject();
     }
 
-    public function addInstance($instance): void {
+    public function addInstance(string $class, $instance): void {
         $class = get_class($instance);
         $this->instances[$class] = $instance;
     }
@@ -57,7 +57,7 @@ class InstanceStore {
         foreach ($this->instances as $instance) {
             if (is_a($instance, $class)) {
                 // Add the instance so we can get it directly next time
-                $this->addInstance($instance, $class);
+                $this->addInstance($class, $instance);
                 return $instance;
             }
         }
