@@ -6,9 +6,11 @@ use PHPUnit\Framework\TestCase;
 use SimpleDic\Stubs\AutowireClass;
 use SimpleDic\Stubs\AutowireInterfaceClass;
 use SimpleDic\Stubs\AutowireOptionalClass;
+use SimpleDic\Stubs\ClassTakingInterfaceImplementations;
 use SimpleDic\Stubs\ClassWithOptionalProperties;
 use SimpleDic\Stubs\ClassWithOptionalUntypedProperty;
 use SimpleDic\Stubs\ClassWithProperties;
+use SimpleDic\Stubs\ClassWithUntypedProperty;
 use SimpleDic\Stubs\FactoryClass;
 use SimpleDic\Stubs\ParentClass;
 use SimpleDic\Stubs\ParentInterface;
@@ -56,7 +58,7 @@ class ContainerTest extends TestCase {
 
     public function testGetInstanceOfClassWithUntypedParam(): void {
         $this->expectException(ContainerException::class);
-        $class = $this->instance->getInstance(Stubs\ClassWithUntypedProperty::class);
+        $class = $this->instance->getInstance(ClassWithUntypedProperty::class);
     }
 
     public function testAutowiring(): void {
@@ -97,6 +99,31 @@ class ContainerTest extends TestCase {
 
         $this->assertInstanceOf(AutowireInterfaceClass::class, $autowiredClass);
         $this->assertInstanceOf(SubClass::class, $autowiredClass->getParentClass());
+    }
+
+    /**
+     * Tests type mapping of an interface where a parent implements the same 
+     * interface of it's autowired members. 
+     * 
+     * Highlights bug where type mapping wasn't used on a later request for 
+     * an intance of a later instance (and that later instance was different).
+     *
+     * @return void
+     */
+    public function testAutoloadInterfaceWithInterfaceMembers(): void {
+
+        $this->instance->addTypeMapping(ParentInterface::class, ClassTakingInterfaceImplementations::class);
+
+        /** @var AutowireInterfaceClass $autowiredClass */
+        $autowiredClass = $this->instance->getInstance(ParentInterface::class);
+
+        $this->assertInstanceOf(ClassTakingInterfaceImplementations::class, $autowiredClass);
+        $this->assertInstanceOf(ParentClass::class, $autowiredClass->getParentClass());
+
+        $autowiredClass = $this->instance->getInstance(ParentInterface::class);
+        $this->assertInstanceOf(ClassTakingInterfaceImplementations::class, $autowiredClass);
+        $this->assertInstanceOf(ParentClass::class, $autowiredClass->getParentClass());
+
     }
 
     public function testAutowireInterfaceWithFactory(): void {
