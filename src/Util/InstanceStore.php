@@ -24,7 +24,6 @@ class InstanceStore {
     }
 
     public function addInstance(string $class, $instance): void {
-        $class = get_class($instance);
         $this->instances[$class] = $instance;
     }
 
