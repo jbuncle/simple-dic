@@ -106,15 +106,11 @@ class FactoryStore {
         return $value;
     }
 
-    public function get(string $class): callable {
-        return $this->factoryStore[$class];
-    }
-
     public function add(callable $method, string $class): string {
 
         if (empty($class)) {
             $reflection = $this->callableToReflection($method);
-            $returnType = $reflection->getReturnType();
+            $returnType = (string) $reflection->getReturnType();
             $methodName = $reflection->getName();
             if ($returnType === null) {
                 throw new InvalidArgumentException("Can't establish type for factory '$methodName'");

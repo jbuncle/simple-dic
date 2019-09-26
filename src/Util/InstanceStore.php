@@ -56,9 +56,9 @@ class InstanceStore {
      * or implements it.
      *
      * @param string $class
-     * @return type
+     * @return mixed
      */
-    public function getSuitableInstance(string $class): type {
+    public function getSuitableInstance(string $class) {
         $instance = $this->getInstance($class);
 
         if ($instance !== null) {

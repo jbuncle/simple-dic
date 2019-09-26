@@ -184,10 +184,12 @@ class Container implements ArgsInjector, ContainerInterface, ContainerSetupInter
      * Create instance of given class.
      *
      * @param string $class
-     * @return type
+     *
+     * @return mixed
+     *
      * @throws ContainerException
      */
-    private function autowireInstance(string $class): type {
+    private function autowireInstance(string $class) {
         $reflection = new ReflectionClass($class);
 
         if ($reflection->isInterface()) {
