@@ -1,7 +1,6 @@
-<?php
-
-/*
- * Copyright (C) 2019 James Buncle (https://jbuncle.co.uk) - All Rights Reserved
+<?php declare(strict_types=1);
+/**
+ * Copyright (C) 2019 James Buncle (https://www.jbuncle.co.uk) - All Rights Reserved
  */
 
 namespace SimpleDic;
@@ -20,7 +19,7 @@ use SimpleDic\Util\TypeUtility;
  *
  * @author James Buncle <jbuncle@hotmail.com>
  */
-class Container implements ArgsInjector, ContainerInterface {
+class Container implements ArgsInjector, ContainerInterface, ContainerSetupInterface {
 
     /**
      *
@@ -46,7 +45,11 @@ class Container implements ArgsInjector, ContainerInterface {
         $this->typeMapStore = new TypeMapStore();
     }
 
-    public static function createContainer() {
+    /**
+     *
+     * @return \self
+     */
+    public static function createContainer(): self {
         $container = new self();
         // Add the container itself.
         $container->instanceStore->addInstance(get_class($container), $container);
@@ -64,26 +67,33 @@ class Container implements ArgsInjector, ContainerInterface {
         if (!TypeUtility::typeExists($class)) {
             throw new InvalidArgumentException("Class '$class' class does not exist");
         }
+
         // Attempt to find an existing suitable instance
         $suitableInstance = $this->instanceStore->getSuitableInstance($class);
         if ($suitableInstance !== null) {
             return $suitableInstance;
         }
+
         // Create a new instance
         $instance = $this->createInstance($class);
-        
+
+        // Store the instance for next time the class is requested
         $this->instanceStore->addInstance($class, $instance);
 
         return $instance;
     }
 
+    public function hasInstance(string $class): bool {
+        return $this->getInstance($class) !== null;
+    }
+
     /**
      * Make the container aware of given type to use if needed.
-     * 
+     *
      * This allows a quick and easy way to make the container aware of an instance
      * to use. For example, when an interface is used you can declare the implementing
      * class.
-     * 
+     *
      * @deprecated Use addTypeMapping to be explicit of the types
      *
      * @param string $type
@@ -95,15 +105,15 @@ class Container implements ArgsInjector, ContainerInterface {
 
     /**
      * Add a factory method for the container to use when looking up a type.
-     * 
+     *
      * The factory method's (callback's) parameters will be autowired.
-     * 
+     *
      * If 'class' isn't defined, the return type will be looked up.
-     * 
+     *
      * @param callable $method The callback.
      * @param string   $class  The return type (the type the callback provides).
      */
-    public function addFactory(callable $method, string $class = '') {
+    public function addFactory(callable $method, string $class = ''): void {
         // Add to factory store
         $class = $this->factoryStore->add($method, $class);
         // Make container aware of type
@@ -124,6 +134,12 @@ class Container implements ArgsInjector, ContainerInterface {
         $this->typeMapStore->addTypeMapping($for, $type, $overwrite);
     }
 
+    /**
+     *
+     * @param string $class
+     *
+     * @return mixed
+     */
     private function createInstance(string $class) {
         // Check if given class is a mapped class
         $mappedClass = $this->typeMapStore->getSuitableMapping($class);
@@ -150,6 +166,11 @@ class Container implements ArgsInjector, ContainerInterface {
         return $this->createNewInstance($class);
     }
 
+    /**
+     *
+     * @param string $class
+     * @return mixed
+     */
     private function createNewInstance(string $class) {
 
         if ($this->factoryStore->hasFactory($class)) {
@@ -166,17 +187,19 @@ class Container implements ArgsInjector, ContainerInterface {
      * @return type
      * @throws ContainerException
      */
-    private function autowireInstance(string $class) {
+    private function autowireInstance(string $class): type {
         $reflection = new ReflectionClass($class);
 
         if ($reflection->isInterface()) {
             throw new ContainerException("Cannot create instance from interface '$class'");
         }
+
         /* @var $constructor ReflectionMethod */
         $constructor = $reflection->getConstructor();
         if ($constructor === null) {
             return $reflection->newInstanceArgs([]);
         }
+
         /* @var $constructorParams ReflectionParameter[] */
         $constructorParams = $constructor->getParameters();
 
@@ -188,7 +211,12 @@ class Container implements ArgsInjector, ContainerInterface {
     /**
      * Get instances for given array of ReflectionParameters.
      *
-     * @param ReflectionParameter[] $params
+     * @param array<ReflectionParameter> $params
+     *
+     * @return array<mixed>
+     *
+     * @throws ContainerException
+     * @throws \SimpleDic\ContainerException
      */
     public function getArgsForParams(array $params): array {
         // TODO: add support to ignore scalar typed, defaulted arguments
@@ -199,9 +227,11 @@ class Container implements ArgsInjector, ContainerInterface {
                     // No type, but optional (allowed but treated as end of arguments)
                     break;
                 }
+
                 // Non-optional and can't create instance
                 throw new ContainerException("Can't auto inject param {$param->getName()}");
             }
+
             $paramType = $param->getClass();
             if (!$paramType) {
                 // Handle defaults
@@ -209,9 +239,11 @@ class Container implements ArgsInjector, ContainerInterface {
                     // End of args
                     break;
                 }
+
                 $paramName = $param->getName();
                 throw new ContainerException("Missing type for param '$paramName'");
             }
+
             try {
                 $args[] = $this->getInstance($paramType->getName());
             } catch (ContainerException $ex) {
@@ -219,9 +251,11 @@ class Container implements ArgsInjector, ContainerInterface {
                     // End of args
                     break;
                 }
+
                 throw $ex;
             }
         }
+
         return $args;
     }
 

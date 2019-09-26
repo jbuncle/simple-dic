@@ -1,5 +1,4 @@
-<?php
-
+<?php declare(strict_types=1);
 namespace SimpleDic;
 
 use PHPUnit\Framework\TestCase;
@@ -102,10 +101,10 @@ class ContainerTest extends TestCase {
     }
 
     /**
-     * Tests type mapping of an interface where a parent implements the same 
-     * interface of it's autowired members. 
-     * 
-     * Highlights bug where type mapping wasn't used on a later request for 
+     * Tests type mapping of an interface where a parent implements the same
+     * interface of it's autowired members.
+     *
+     * Highlights bug where type mapping wasn't used on a later request for
      * an intance of a later instance (and that later instance was different).
      *
      * @return void

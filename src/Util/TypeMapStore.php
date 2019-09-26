@@ -1,7 +1,6 @@
-<?php
-
-/*
- * Copyright (C) 2019 James Buncle (https://jbuncle.co.uk) - All Rights Reserved
+<?php declare(strict_types=1);
+/**
+ * Copyright (C) 2019 James Buncle (https://www.jbuncle.co.uk) - All Rights Reserved
  */
 
 namespace SimpleDic\Util;
@@ -37,6 +36,7 @@ class TypeMapStore {
         if ($this->hasMapping($class)) {
             return $this->getMapping($class);
         }
+
         return TypeUtility::findSubType($this->keys, $class);
     }
 
@@ -46,10 +46,11 @@ class TypeMapStore {
      * @param string $for The type we want to map
      * @param string $type The type to use
      */
-    public function addTypeMapping(string $for, string $type, bool $overwrite = true): void {
+    public function addTypeMapping(string $for, string $type, bool $overwrite = false): void {
         if (!TypeUtility::typeExists($for)) {
             throw new InvalidArgumentException("For '$for' class does not exist");
         }
+
         if (!TypeUtility::typeExists($type)) {
             throw new InvalidArgumentException("Type '$type' class does not exist");
         }

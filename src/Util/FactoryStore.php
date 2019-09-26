@@ -1,7 +1,6 @@
-<?php
-
-/*
- * Copyright (C) 2019 James Buncle (https://jbuncle.co.uk) - All Rights Reserved
+<?php declare(strict_types=1);
+/**
+ * Copyright (C) 2019 James Buncle (https://www.jbuncle.co.uk) - All Rights Reserved
  */
 
 namespace SimpleDic\Util;
@@ -15,7 +14,7 @@ use SimpleDic\ArgsInjector;
 use SimpleDic\ContainerException;
 
 /**
- * Description of FactoryStore
+ * FactoryStore
  *
  * @author James Buncle <jbuncle@hotmail.com>
  */
@@ -38,8 +37,43 @@ class FactoryStore {
         $this->factoryMethods = new ArrayObject();
     }
 
+    public function hasSuitableFactory(string $class): bool {
+        return $this->getSuitableFactory($class) !== null;
+    }
+
+    /**
+     * Find an instance which is either of the given type (class name), extends it,
+     * or implements it.
+     *
+     * @param string $class
+     *
+     * @return bool
+     */
+    private function getSuitableFactory(string $class): ?callable {
+
+        if (array_key_exists($class, $this->factoryMethods)) {
+            return $this->factoryMethods[$class];
+        }
+
+        foreach ($this->factoryMethods as $factoryClass => $factory) {
+            if (\is_subclass_of($factoryClass, $class)) {
+                return $factory;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     *
+     * @param string $class
+     *
+     * @return mixed
+     *
+     * @throws ContainerException
+     */
     public function createFromFactory(string $class) {
-        $callable = $this->factoryMethods[$class];
+        $callable = $this->getSuitableFactory($class);
 
         // TODO: check callback return type
         if (is_array($callable)) {
@@ -64,9 +98,11 @@ class FactoryStore {
             $args = $this->getArgsForParams($params);
             $value = $reflectionFunction->invokeArgs($args);
         }
+
         if (!is_a($value, $class)) {
             throw new ContainerException("Factory for class '$class' returned value of incorrect type.");
         }
+
         return $value;
     }
 
@@ -83,9 +119,11 @@ class FactoryStore {
             if ($returnType === null) {
                 throw new InvalidArgumentException("Can't establish type for factory '$methodName'");
             }
+
             if (!TypeUtility::typeExists($returnType)) {
                 throw new InvalidArgumentException("Return type '$returnType' is not a class");
             }
+
             $class = (string) $returnType;
         }
 
@@ -99,12 +137,18 @@ class FactoryStore {
         return \array_key_exists($class, $this->factoryMethods);
     }
 
+    /**
+     *
+     * @param array<ReflectionParameter> $params
+     *
+     * @return array<mixed>
+     */
     private function getArgsForParams(array $params): array {
         return $this->argsInjector->getArgsForParams($params);
     }
 
     private function callableToReflection(callable $callable): ReflectionFunctionAbstract {
-        if (TypeUtility::isCallableAMethod($callable)) {
+        if (TypeUtility::isMethod($callable)) {
             return new ReflectionMethod($callable[0], $callable[1]);
         } else {
             return new ReflectionFunction($callable);

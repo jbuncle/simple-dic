@@ -1,7 +1,6 @@
-<?php
-
-/*
- * Copyright (C) 2019 James Buncle (https://jbuncle.co.uk) - All Rights Reserved
+<?php declare(strict_types=1);
+/**
+ * Copyright (C) 2019 James Buncle (https://www.jbuncle.co.uk) - All Rights Reserved
  */
 
 namespace SimpleDic\Util;
@@ -23,6 +22,13 @@ class InstanceStore {
         $this->instances = new \ArrayObject();
     }
 
+    /**
+     *
+     * @param string $class
+     * @param mixed $instance
+     *
+     * @return void
+     */
     public function addInstance(string $class, $instance): void {
         $this->instances[$class] = $instance;
     }
@@ -31,6 +37,12 @@ class InstanceStore {
         return array_key_exists($class, $this->instances);
     }
 
+    /**
+     *
+     * @param string $class
+     *
+     * @return mixed
+     */
     private function getInstance(string $class) {
         if ($this->hasInstance($class)) {
             return $this->instances[$class];
@@ -42,13 +54,13 @@ class InstanceStore {
     /**
      * Find an instance which is either of the given type (class name), extends it,
      * or implements it.
-     *  
+     *
      * @param string $class
      * @return type
      */
-    public function getSuitableInstance(string $class) {
+    public function getSuitableInstance(string $class): type {
         $instance = $this->getInstance($class);
-        
+
         if ($instance !== null) {
             return $instance;
         }

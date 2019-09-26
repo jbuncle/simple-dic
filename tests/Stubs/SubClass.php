@@ -1,9 +1,6 @@
-<?php
-
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+<?php declare(strict_types=1);
+/**
+ * Copyright (C) 2019 James Buncle (https://www.jbuncle.co.uk) - All Rights Reserved
  */
 
 namespace SimpleDic\Stubs;
