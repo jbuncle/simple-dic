@@ -31,7 +31,7 @@ class Container implements ArgsInjector, ContainerInterface, ContainerSetupInter
      *
      * @var FactoryStore
      */
-    private $factoryStore = [];
+    private $factoryStore;
 
     /**
      *
@@ -45,10 +45,6 @@ class Container implements ArgsInjector, ContainerInterface, ContainerSetupInter
         $this->typeMapStore = new TypeMapStore();
     }
 
-    /**
-     *
-     * @return \self
-     */
     public static function createContainer(): self {
         $container = new self();
         // Add the container itself.
@@ -117,7 +113,7 @@ class Container implements ArgsInjector, ContainerInterface, ContainerSetupInter
         // Add to factory store
         $class = $this->factoryStore->add($method, $class);
         // Make container aware of type
-        $this->addType($class);
+        $this->addTypeMapping($class, $class);
     }
 
     /**
@@ -218,7 +214,7 @@ class Container implements ArgsInjector, ContainerInterface, ContainerSetupInter
      * @return array<mixed>
      *
      * @throws ContainerException
-     * @throws \SimpleDic\ContainerException
+     * @throws ContainerException
      */
     public function getArgsForParams(array $params): array {
         // TODO: add support to ignore scalar typed, defaulted arguments

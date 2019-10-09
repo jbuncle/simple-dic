@@ -8,10 +8,10 @@ cache:
   paths:
     - vendor/
 
-lint_php:
+phplint:
     stage: check
     image: cyberpearuk/php-build-docker
-    script: phplint
+    script: phplint --exclude=vendor ./
 
 phpcs:
     stage: check
@@ -22,19 +22,26 @@ phpcs:
         - vendor/bin/phpcs -n -s --standard=php-standards ./src
         - vendor/bin/phpcs -n -s --standard=php-standards ./tests
 
-test:
+phpunit:
     stage: test
     image: cyberpearuk/php-build-docker
     script:
         - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
         - composer install
-        - vendor/bin/phpunit --configuration phpunit.xml --coverage-text --colors=never
+        - vendor/bin/phpunit --configuration phpunit.xml --coverage-clover=coverage.xml
+
+phan:
+    stage: check
+    image: cyberpearuk/php-build-docker
+    script:
+        - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
+        - composer install
+        - phan
 
 tag:
     stage: deploy
     image: docker.jbuncle.co.uk/jbuncle/php-autosemver
     script:
-        - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
         - tag
     only:
         refs:
@@ -44,10 +51,12 @@ deploy_tag:
     stage: deploy
     image: cyberpearuk/php-build-docker
     script:
-        - rm -rf nbproject
-        - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
-        - composer install --no-dev
-        - composer nexus-push --url=https://nexus.jbuncle.co.uk/repository/composer-private/ --username=composer-publisher --password=$NEXUS_PASS $CI_COMMIT_TAG
+        - php <(curl -s https://gist.githubusercontent.com/jbuncle/8e479343cfeb785046e3c6fe1a73dcce/raw/nexus-upload.php)
+         --repository=https://nexus.jbuncle.co.uk/repository/composer-private/ 
+         --username=composer-publisher 
+         --password=$NEXUS_PASS 
+         --version=$CI_COMMIT_TAG
+         --ignore="/^(nbproject.*|\.gitlab\-ci\.yml|\.phan.*|tests.*|phpunit\.xml)$/"
     only:
         - tags
 

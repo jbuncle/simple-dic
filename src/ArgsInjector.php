@@ -14,7 +14,7 @@ interface ArgsInjector {
     /**
      * Get instances for given array of ReflectionParameters.
      *
-     * @param array<ReflectionParameter> $params
+     * @param array<\ReflectionParameter> $params
      *
      * @return array<mixed>
      *

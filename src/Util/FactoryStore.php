@@ -22,7 +22,7 @@ class FactoryStore {
 
     /**
      *
-     * @var callable
+     * @var \ArrayObject
      */
     private $factoryMethods;
 
@@ -47,12 +47,12 @@ class FactoryStore {
      *
      * @param string $class
      *
-     * @return bool
+     * @return callable|null
      */
     private function getSuitableFactory(string $class): ?callable {
 
-        if (array_key_exists($class, $this->factoryMethods)) {
-            return $this->factoryMethods[$class];
+        if ($this->factoryMethods->offsetExists($class)) {
+            return $this->factoryMethods->offsetGet($class);
         }
 
         foreach ($this->factoryMethods as $factoryClass => $factory) {
@@ -92,11 +92,13 @@ class FactoryStore {
 
                 $value = $reflectionMethod->invokeArgs($callable[0], $args);
             }
-        } else {
+        } else if (is_string($callable) || $callable instanceof  \Closure) {
             $reflectionFunction = new ReflectionFunction($callable);
             $params = $reflectionFunction->getParameters();
             $args = $this->getArgsForParams($params);
             $value = $reflectionFunction->invokeArgs($args);
+        } else {
+            throw new InvalidArgumentException("Unexpected callable variant " . var_export($callable, true));
         }
 
         if (!is_a($value, $class)) {
@@ -124,7 +126,7 @@ class FactoryStore {
         }
 
         //Add to factory list
-        $this->factoryMethods[$class] = $method;
+        $this->factoryMethods->offsetSet($class, $method);
 
         return $class;
     }
@@ -135,7 +137,7 @@ class FactoryStore {
 
     /**
      *
-     * @param array<ReflectionParameter> $params
+     * @param array<\ReflectionParameter> $params
      *
      * @return array<mixed>
      */
@@ -144,11 +146,13 @@ class FactoryStore {
     }
 
     private function callableToReflection(callable $callable): ReflectionFunctionAbstract {
-        if (TypeUtility::isMethod($callable)) {
+        if (\is_array($callable)) {
             return new ReflectionMethod($callable[0], $callable[1]);
-        } else {
+        } else if (is_string($callable) || $callable instanceof  \Closure) {
             return new ReflectionFunction($callable);
         }
+
+        throw new InvalidArgumentException("Unexpected callable variant " . var_export($callable, true));
     }
 
 }

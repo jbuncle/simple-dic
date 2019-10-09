@@ -5,6 +5,8 @@
 
 namespace SimpleDic;
 
+use InvalidArgumentException;
+
 /**
  * ContainerInterface
  *

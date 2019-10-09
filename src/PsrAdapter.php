@@ -5,14 +5,15 @@
 
 namespace SimpleDic;
 
-use Psr\Container\ContainerInterface as PsrContainerInterface;
+use SimpleDic\Container;
+use Psr\Container\ContainerInterface;
 
 /**
  * PsrAdapter
  *
  * @author jbuncle
  */
-class PsrAdapter implements PsrContainerInterface, ContainerSetupInterface {
+class PsrAdapter implements ContainerInterface, ContainerSetupInterface {
 
     /**
      *
@@ -29,13 +30,10 @@ class PsrAdapter implements PsrContainerInterface, ContainerSetupInterface {
      *
      * @param string $id Identifier of the entry to look for.
      *
-     * @throws NotFoundExceptionInterface  No entry was found for **this** identifier.
-     * @throws ContainerExceptionInterface Error while retrieving the entry.
-     *
      * @return mixed Entry.
      */
     public function get(string $id) {
-        $this->container->getInstance($id);
+        return $this->container->getInstance($id);
     }
 
     /**
@@ -50,7 +48,7 @@ class PsrAdapter implements PsrContainerInterface, ContainerSetupInterface {
      * @return bool
      */
     public function has(string $id): bool {
-        $this->container->hasInstance($id);
+        return $this->container->hasInstance($id);
     }
 
     public function addFactory(callable $method, string $class = ''): void {

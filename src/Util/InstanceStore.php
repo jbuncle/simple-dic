@@ -5,6 +5,8 @@
 
 namespace SimpleDic\Util;
 
+use ArrayObject;
+
 /**
  * InstanceStore
  *
@@ -14,12 +16,13 @@ class InstanceStore {
 
     /**
      * Map of instances.
+     *
      * @var ArrayObject
      */
     private $instances;
 
     public function __construct() {
-        $this->instances = new \ArrayObject();
+        $this->instances = new ArrayObject();
     }
 
     /**
@@ -30,11 +33,11 @@ class InstanceStore {
      * @return void
      */
     public function addInstance(string $class, $instance): void {
-        $this->instances[$class] = $instance;
+        $this->instances->offsetSet($class, $instance);
     }
 
     private function hasInstance(string $class): bool {
-        return array_key_exists($class, $this->instances);
+        return $this->instances->offsetExists($class);
     }
 
     /**
@@ -45,7 +48,7 @@ class InstanceStore {
      */
     private function getInstance(string $class) {
         if ($this->hasInstance($class)) {
-            return $this->instances[$class];
+            return $this->instances->offsetGet($class);
         }
 
         return null;
