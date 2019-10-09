@@ -27,7 +27,7 @@
     "require-dev": {
         "phpunit/phpunit": "^8.2",
         "phpunit/php-code-coverage": "^7.0",
-        "jbuncle/php-standards": "^2.0"
+        "jbuncle/php-standards": "@stable"
     },
     "require": {
         "php": ">=7.1",

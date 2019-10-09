@@ -92,7 +92,7 @@ class FactoryStore {
 
                 $value = $reflectionMethod->invokeArgs($callable[0], $args);
             }
-        } else if (is_string($callable) || $callable instanceof  \Closure) {
+        } else if (is_string($callable) || $callable instanceof \Closure) {
             $reflectionFunction = new ReflectionFunction($callable);
             $params = $reflectionFunction->getParameters();
             $args = $this->getArgsForParams($params);
@@ -148,7 +148,7 @@ class FactoryStore {
     private function callableToReflection(callable $callable): ReflectionFunctionAbstract {
         if (\is_array($callable)) {
             return new ReflectionMethod($callable[0], $callable[1]);
-        } else if (is_string($callable) || $callable instanceof  \Closure) {
+        } else if (is_string($callable) || $callable instanceof \Closure) {
             return new ReflectionFunction($callable);
         }
 
