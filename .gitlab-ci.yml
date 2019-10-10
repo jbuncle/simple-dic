@@ -22,14 +22,6 @@ phpcs:
         - vendor/bin/phpcs -n -s --standard=php-standards ./src
         - vendor/bin/phpcs -n -s --standard=php-standards ./tests
 
-phpunit:
-    stage: test
-    image: cyberpearuk/php-build-docker
-    script:
-        - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
-        - composer install
-        - vendor/bin/phpunit --configuration phpunit.xml --coverage-clover=coverage.xml
-
 phan:
     stage: check
     image: cyberpearuk/php-build-docker
@@ -37,6 +29,15 @@ phan:
         - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
         - composer install
         - phan
+
+phpunit:
+    stage: test
+    image: cyberpearuk/php-build-docker
+    script:
+        - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
+        - composer install
+        - vendor/bin/phpunit --configuration phpunit.xml --coverage-text --colors=never
+    coverage: '^\s*Lines:\s*\d+.\d+\%'
 
 tag:
     stage: deploy
