@@ -27,7 +27,7 @@ phan:
     image: cyberpearuk/php-build-docker
     script:
         - composer global config http-basic.nexus.jbuncle.co.uk composer-publisher $NEXUS_PASS 
-        - composer install
+        - composer install --no-dev
         - phan
 
 phpunit:
