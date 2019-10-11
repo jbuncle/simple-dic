@@ -11,6 +11,8 @@ use Psr\Container\ContainerInterface;
 /**
  * PsrAdapter
  *
+ * phpcs:disable SlevomatCodingStandard.TypeHints.TypeHintDeclaration.MissingParameterTypeHint
+ *
  * @author jbuncle
  */
 class PsrAdapter implements ContainerInterface, ContainerSetupInterface {
@@ -32,7 +34,7 @@ class PsrAdapter implements ContainerInterface, ContainerSetupInterface {
      *
      * @return mixed Entry.
      */
-    public function get(string $id) {
+    public function get($id) {
         return $this->container->getInstance($id);
     }
 
@@ -47,7 +49,7 @@ class PsrAdapter implements ContainerInterface, ContainerSetupInterface {
      *
      * @return bool
      */
-    public function has(string $id): bool {
+    public function has($id): bool {
         return $this->container->hasInstance($id);
     }
 
