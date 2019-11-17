@@ -11,6 +11,9 @@ namespace SimpleDic\Stubs;
  */
 class FactoryClass {
 
+    public function __construct() {
+    }
+
     public function getClass(): ClassWithProperties {
         return new ClassWithProperties('factory-val');
     }

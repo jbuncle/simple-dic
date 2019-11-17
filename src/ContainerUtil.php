@@ -14,6 +14,9 @@ use ReflectionClass;
  */
 class ContainerUtil {
 
+    public function __construct() {
+    }
+
     /**
      *
      * @param Container $container

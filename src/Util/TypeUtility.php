@@ -14,6 +14,9 @@ use ArrayObject;
  */
 class TypeUtility {
 
+    public function __construct() {
+    }
+
     /**
      * Check if the given type actually exists.
      *

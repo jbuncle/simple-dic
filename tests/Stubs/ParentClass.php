@@ -10,4 +10,8 @@ namespace SimpleDic\Stubs;
  * @author James Buncle <jbuncle@hotmail.com>
  */
 class ParentClass implements ParentInterface {
+
+    public function __construct() {
+    }
+
 }
