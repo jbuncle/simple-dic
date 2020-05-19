@@ -56,7 +56,7 @@ class FactoryStore {
         }
 
         foreach ($this->factoryMethods as $factoryClass => $factory) {
-            if (\is_subclass_of($factoryClass, $class)) {
+            if (\is_subclass_of((string) $factoryClass, $class)) {
                 return $factory;
             }
         }

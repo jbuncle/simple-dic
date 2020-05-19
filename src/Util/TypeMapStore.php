@@ -27,9 +27,16 @@ class TypeMapStore {
      */
     private $keys;
 
+    /**
+     *
+     * @var \ArrayObject
+     */
+    private $subtypeCache;
+
     public function __construct() {
         $this->typeMappings = new ArrayObject();
         $this->keys = new \ArrayObject();
+        $this->subtypeCache = new \ArrayObject();
     }
 
     public function getSuitableMapping(string $class): ?string {
@@ -37,7 +44,20 @@ class TypeMapStore {
             return $this->getMapping($class);
         }
 
-        return TypeUtility::findSubType($this->keys, $class);
+        // Search for a subtype
+        return $this->lookupSubtype($class);
+    }
+
+    private function lookupSubtype(string $class): ?string {
+        if ($this->subtypeCache->offsetExists($class)) {
+            return $this->subtypeCache->offsetGet($class);
+        }
+
+        $subtype = TypeUtility::findSubType($this->keys, $class);
+        // Store
+        $this->subtypeCache->offsetSet($class, $subtype);
+        // Return original
+        return $subtype;
     }
 
     /**
@@ -55,18 +75,20 @@ class TypeMapStore {
             throw new InvalidArgumentException("Type '$type' class does not exist");
         }
 
-        if ($overwrite || !array_key_exists($for, $this->typeMappings)) {
-            $this->keys[] = $for;
-            $this->typeMappings[$for] = $type;
+        if ($overwrite || !$this->typeMappings->offsetExists($for)) {
+            $this->keys->append($for);
+            $this->typeMappings->offsetSet($for, $type);
+            // Clear subtype lookup cache
+            $this->subtypeCache = new \ArrayObject();
         }
     }
 
     private function hasMapping(string $class): bool {
-        return \array_key_exists($class, $this->typeMappings);
+        return $this->typeMappings->offsetExists($class);
     }
 
-    private function getMapping(string $class): string {
-        return $this->typeMappings[$class];
+    private function getMapping(string $class): ?string {
+        return $this->typeMappings->offsetGet($class);
     }
 
 }

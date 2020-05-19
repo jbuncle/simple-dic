@@ -36,24 +36,6 @@ class InstanceStore {
         $this->instances->offsetSet($class, $instance);
     }
 
-    private function hasInstance(string $class): bool {
-        return $this->instances->offsetExists($class);
-    }
-
-    /**
-     *
-     * @param string $class
-     *
-     * @return mixed
-     */
-    private function getInstance(string $class) {
-        if ($this->hasInstance($class)) {
-            return $this->instances->offsetGet($class);
-        }
-
-        return null;
-    }
-
     /**
      * Find an instance which is either of the given type (class name), extends it,
      * or implements it.
@@ -62,10 +44,9 @@ class InstanceStore {
      * @return mixed
      */
     public function getSuitableInstance(string $class) {
-        $instance = $this->getInstance($class);
-
-        if ($instance !== null) {
-            return $instance;
+        // Lookupfrom instance cache
+        if ($this->instances->offsetExists($class)) {
+            return $this->instances->offsetGet($class);
         }
 
         foreach ($this->instances as $instance) {
@@ -76,6 +57,8 @@ class InstanceStore {
             }
         }
 
+        // Add null to instance cache so we don't try again
+        $this->addInstance($class, null);
         return null;
     }
 

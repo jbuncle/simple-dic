@@ -25,7 +25,8 @@ class TypeUtility {
      * @return bool
      */
     public static function typeExists(string $type): bool {
-        return interface_exists($type) || class_exists($type);
+        // This is a relatively slow operation, so should be called sparingly
+        return class_exists($type) || interface_exists($type);
     }
 
     public static function isMethod(callable $val): bool {

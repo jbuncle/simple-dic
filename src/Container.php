@@ -60,10 +60,6 @@ class Container implements ArgsInjector, ContainerInterface, ContainerSetupInter
      * @throws InvalidArgumentException If the class name is for a non-existing type
      */
     public function getInstance(string $class) {
-        if (!TypeUtility::typeExists($class)) {
-            throw new InvalidArgumentException("Class '$class' class does not exist");
-        }
-
         // Attempt to find an existing suitable instance
         $suitableInstance = $this->instanceStore->getSuitableInstance($class);
         if ($suitableInstance !== null) {
