@@ -6,10 +6,13 @@
 namespace SimpleDic\Util;
 
 use ArrayObject;
+use Closure;
 use InvalidArgumentException;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
+use ReflectionNamedType;
+use ReflectionType;
 use SimpleDic\ArgsInjector;
 use SimpleDic\ContainerException;
 
@@ -92,7 +95,7 @@ class FactoryStore {
 
                 $value = $reflectionMethod->invokeArgs($callable[0], $args);
             }
-        } else if (is_string($callable) || $callable instanceof \Closure) {
+        } else if (is_string($callable) || $callable instanceof Closure) {
             $reflectionFunction = new ReflectionFunction($callable);
             $params = $reflectionFunction->getParameters();
             $args = $this->getArgsForParams($params);
@@ -112,9 +115,8 @@ class FactoryStore {
 
         if (empty($class)) {
             $reflection = $this->callableToReflection($method);
-            /** @var \ReflectionNamedType $returnType */
-            $returnTypeObj = $reflection->getReturnType();
-            $returnType = $returnTypeObj->getName();
+            /** @var ReflectionNamedType $returnType */
+            $returnType = $this->getTypeString($reflection->getReturnType());
             $methodName = $reflection->getName();
             if ($returnType === null) {
                 throw new InvalidArgumentException("Can't establish type for factory '$methodName'");
@@ -131,6 +133,21 @@ class FactoryStore {
         $this->factoryMethods->offsetSet($class, $method);
 
         return $class;
+    }
+
+    private function getTypeString(?ReflectionType $returnTypeObj): ?string {
+        if (!($returnTypeObj instanceof ReflectionNamedType)) {
+            return null;
+        }
+
+        if ($returnTypeObj === null) {
+            return null;
+        } else if (method_exists($returnTypeObj, 'getName')) {
+            /* @phan-suppress-next-line PhanUndeclaredMethod */
+            return $returnTypeObj->getName();
+        } else {
+            return (string) $returnTypeObj;
+        }
     }
 
     public function hasFactory(string $class): bool {
@@ -150,7 +167,7 @@ class FactoryStore {
     private function callableToReflection(callable $callable): ReflectionFunctionAbstract {
         if (\is_array($callable)) {
             return new ReflectionMethod($callable[0], $callable[1]);
-        } else if (is_string($callable) || $callable instanceof \Closure) {
+        } else if (is_string($callable) || $callable instanceof Closure) {
             return new ReflectionFunction($callable);
         }
 
