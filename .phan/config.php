@@ -14,7 +14,7 @@ return [
     ],
     'directory_list' => [
         'src',
-        'vendor',
+        'vendor/psr/container',
     ],
     "exclude_analysis_directory_list" => [
         'vendor',
