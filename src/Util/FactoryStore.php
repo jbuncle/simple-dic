@@ -112,7 +112,9 @@ class FactoryStore {
 
         if (empty($class)) {
             $reflection = $this->callableToReflection($method);
-            $returnType = (string) $reflection->getReturnType();
+            /** @var \ReflectionNamedType $returnType */
+            $returnTypeObj = $reflection->getReturnType();
+            $returnType = $returnTypeObj->getName();
             $methodName = $reflection->getName();
             if ($returnType === null) {
                 throw new InvalidArgumentException("Can't establish type for factory '$methodName'");
@@ -132,7 +134,7 @@ class FactoryStore {
     }
 
     public function hasFactory(string $class): bool {
-        return \array_key_exists($class, $this->factoryMethods);
+        return $this->factoryMethods->offsetExists($class);
     }
 
     /**
