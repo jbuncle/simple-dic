@@ -44,7 +44,7 @@ phpunit:
 
 tag:
     stage: deploy
-    image: docker.jbuncle.co.uk/jbuncle/php-autosemver
+    image: jbuncle/php-autosemver
     script:
         - tag
     only:
