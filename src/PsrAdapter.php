@@ -34,7 +34,7 @@ class PsrAdapter implements ContainerInterface, ContainerSetupInterface {
      *
      * @return mixed Entry.
      */
-    public function get($id) {
+    public function get(string $id) {
         return $this->container->getInstance($id);
     }
 
@@ -49,7 +49,7 @@ class PsrAdapter implements ContainerInterface, ContainerSetupInterface {
      *
      * @return bool
      */
-    public function has($id): bool {
+    public function has(string $id): bool {
         return $this->container->hasInstance($id);
     }
 
