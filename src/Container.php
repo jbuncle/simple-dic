@@ -3,15 +3,15 @@
  * Copyright (C) 2019 James Buncle (https://www.jbuncle.co.uk) - All Rights Reserved
  */
 
-namespace SimpleDic;
+namespace JBuncle\SimpleDic;
 
 use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionParameter;
-use SimpleDic\Util\FactoryStore;
-use SimpleDic\Util\InstanceStore;
-use SimpleDic\Util\TypeMapStore;
+use JBuncle\SimpleDic\Util\FactoryStore;
+use JBuncle\SimpleDic\Util\InstanceStore;
+use JBuncle\SimpleDic\Util\TypeMapStore;
 use Throwable;
 
 /**
@@ -144,21 +144,30 @@ class Container implements ArgsInjector, ContainerInterface, ContainerSetupInter
             // Already doing
             throw new \Exception("Recursion protection '" . implode("' => '", $this->queue) . "' => '$class'");
         }
+
         array_push($this->queue, $class);
         try {
             $instance = $this->doCreateInstance($class);
         } catch(Throwable $ex){
-            throw new ContainerException("Failed to create instance of '$class' due to '{$ex->getMessage()}'", 0, $ex);  
+            throw new ContainerException("Failed to create instance of '$class' due to '{$ex->getMessage()}'", 0, $ex);
         } finally {
             $popped = array_pop($this->queue);
         }
+
         if ($popped !== $class) {
             // This shouldn't actaully ever happen.
             throw new ContainerException("Mismatched instance '$class' => '$popped'");
         }
+
         return $instance;
     }
 
+    /**
+     *
+     * @param string $class
+     *
+     * @return mixed
+     */
     private function doCreateInstance(string $class) {
 
         // Check if given class is a mapped class
@@ -182,6 +191,7 @@ class Container implements ArgsInjector, ContainerInterface, ContainerSetupInter
             // Create instance of mapped type
             return $this->createInstance($type);
         }
+
         return $this->createNewInstance($class);
     }
 

@@ -3,7 +3,7 @@
  * Copyright (C) 2019 James Buncle (https://www.jbuncle.co.uk) - All Rights Reserved
  */
 
-namespace SimpleDic;
+namespace JBuncle\SimpleDic;
 
 /**
  *
@@ -19,7 +19,7 @@ interface ArgsInjector {
      * @return array<mixed>
      *
      * @throws ContainerException
-     * @throws \SimpleDic\ContainerException
+     * @throws \JBuncle\SimpleDic\ContainerException
      */
     public function getArgsForParams(array $params): array;
 

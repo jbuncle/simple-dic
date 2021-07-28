@@ -3,7 +3,7 @@
  * Copyright (C) 2019 CyberPear (https://www.cyberpear.co.uk) - All Rights Reserved
  */
 
-namespace SimpleDic;
+namespace JBuncle\SimpleDic;
 
 use ReflectionClass;
 

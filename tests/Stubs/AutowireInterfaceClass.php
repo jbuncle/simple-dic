@@ -3,7 +3,7 @@
  * Copyright (C) 2019 James Buncle (https://www.jbuncle.co.uk) - All Rights Reserved
  */
 
-namespace SimpleDic\Stubs;
+namespace JBuncle\SimpleDic\Stubs;
 
 /**
  * AutowireClass

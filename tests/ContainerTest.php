@@ -1,19 +1,19 @@
 <?php declare(strict_types=1);
-namespace SimpleDic;
+namespace JBuncle\SimpleDic;
 
 use PHPUnit\Framework\TestCase;
-use SimpleDic\Stubs\AutowireClass;
-use SimpleDic\Stubs\AutowireInterfaceClass;
-use SimpleDic\Stubs\AutowireOptionalClass;
-use SimpleDic\Stubs\ClassTakingInterfaceImplementations;
-use SimpleDic\Stubs\ClassWithOptionalProperties;
-use SimpleDic\Stubs\ClassWithOptionalUntypedProperty;
-use SimpleDic\Stubs\ClassWithProperties;
-use SimpleDic\Stubs\ClassWithUntypedProperty;
-use SimpleDic\Stubs\FactoryClass;
-use SimpleDic\Stubs\ParentClass;
-use SimpleDic\Stubs\ParentInterface;
-use SimpleDic\Stubs\SubClass;
+use JBuncle\SimpleDic\Stubs\AutowireClass;
+use JBuncle\SimpleDic\Stubs\AutowireInterfaceClass;
+use JBuncle\SimpleDic\Stubs\AutowireOptionalClass;
+use JBuncle\SimpleDic\Stubs\ClassTakingInterfaceImplementations;
+use JBuncle\SimpleDic\Stubs\ClassWithOptionalProperties;
+use JBuncle\SimpleDic\Stubs\ClassWithOptionalUntypedProperty;
+use JBuncle\SimpleDic\Stubs\ClassWithProperties;
+use JBuncle\SimpleDic\Stubs\ClassWithUntypedProperty;
+use JBuncle\SimpleDic\Stubs\FactoryClass;
+use JBuncle\SimpleDic\Stubs\ParentClass;
+use JBuncle\SimpleDic\Stubs\ParentInterface;
+use JBuncle\SimpleDic\Stubs\SubClass;
 
 /**
  * ContainerTest

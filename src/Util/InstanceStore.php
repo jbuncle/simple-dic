@@ -3,7 +3,7 @@
  * Copyright (C) 2019 James Buncle (https://www.jbuncle.co.uk) - All Rights Reserved
  */
 
-namespace SimpleDic\Util;
+namespace JBuncle\SimpleDic\Util;
 
 use ArrayObject;
 

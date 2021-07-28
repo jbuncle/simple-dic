@@ -3,9 +3,9 @@
  * Copyright (C) 2019 James Buncle (https://www.jbuncle.co.uk) - All Rights Reserved
  */
 
-namespace SimpleDic;
+namespace JBuncle\SimpleDic;
 
-use SimpleDic\Container;
+use JBuncle\SimpleDic\Container;
 use Psr\Container\ContainerInterface;
 
 /**

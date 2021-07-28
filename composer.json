@@ -16,12 +16,12 @@
     ],
     "autoload": {
         "psr-4": {
-            "SimpleDic\\": "src/"
+            "JBuncle\\SimpleDic\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "SimpleDic\\": "tests/"
+            "JBuncle\\SimpleDic\\": "tests/"
         }
     },
     "require-dev": {

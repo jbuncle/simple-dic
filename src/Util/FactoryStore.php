@@ -3,7 +3,7 @@
  * Copyright (C) 2019 James Buncle (https://www.jbuncle.co.uk) - All Rights Reserved
  */
 
-namespace SimpleDic\Util;
+namespace JBuncle\SimpleDic\Util;
 
 use ArrayObject;
 use Closure;
@@ -13,8 +13,8 @@ use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionType;
-use SimpleDic\ArgsInjector;
-use SimpleDic\ContainerException;
+use JBuncle\SimpleDic\ArgsInjector;
+use JBuncle\SimpleDic\ContainerException;
 
 /**
  * FactoryStore
