@@ -45,18 +45,11 @@ class Container implements ArgsInjector, ContainerInterface, ContainerSetupInter
      */
     private $queue;
 
-    private function __construct() {
+    public function __construct() {
         $this->instanceStore = new InstanceStore();
         $this->factoryStore = new FactoryStore($this);
         $this->typeMapStore = new TypeMapStore();
         $this->queue = [];
-    }
-
-    public static function createContainer(): self {
-        $container = new self();
-        // Add the container itself.
-        $container->instanceStore->addInstance(get_class($container), $container);
-        return $container;
     }
 
     /**
@@ -287,6 +280,21 @@ class Container implements ArgsInjector, ContainerInterface, ContainerSetupInter
         }
 
         return $args;
+    }
+
+    /**
+     * Add a pre-existing instance
+     *
+     * @param mixed $instance
+     * @param ?string $for (Optional) Alternative type to map to.
+     * @return void
+     */
+    public function addInstance($instance, ?string $for = null): void {
+        if ($for === null) {
+            $for = get_class($instance);
+        }
+
+        $this->instanceStore->addInstance($for, $instance);
     }
 
 }

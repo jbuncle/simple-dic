@@ -32,11 +32,7 @@ class ContainerTest extends TestCase {
      * This method is called before a test is executed.
      */
     protected function setUp(): void {
-        $this->instance = Container::createContainer();
-    }
-
-    public function testCreateContainer(): void {
-        $this->assertInstanceOf(Container::class, Container::createContainer());
+        $this->instance = new Container();
     }
 
     public function testGetInstanceOfClass(): void {

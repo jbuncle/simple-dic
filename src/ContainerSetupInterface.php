@@ -36,4 +36,13 @@ interface ContainerSetupInterface {
      */
     public function addTypeMapping(string $for, string $type, bool $overwrite = true): void;
 
+    /**
+     * Add a pre-existing instance
+     *
+     * @param mixed $instance
+     * @param ?string $for (Optional) Alternative type to map to.
+     * @return void
+     */
+    public function addInstance($instance, ?string $for = null): void;
+
 }

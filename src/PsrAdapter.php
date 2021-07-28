@@ -61,4 +61,15 @@ class PsrAdapter implements ContainerInterface, ContainerSetupInterface {
         $this->container->addTypeMapping($for, $type, $overwrite);
     }
 
+    /**
+     * Add a pre-existing instance
+     *
+     * @param mixed $instance
+     * @param ?string $for (Optional) Alternative type to map to.
+     * @return void
+     */
+    public function addInstance($instance, ?string $for = null): void {
+        $this->container->addInstance($for, $for);
+    }
+
 }
