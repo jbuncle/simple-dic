@@ -30,17 +30,17 @@ no setup of the container is required other than instantiating it.
 
 class Baz {
 
-    public __contstruct();
+    public __construct();
 }
 
 class Bar {
 
-    public __contstruct(Baz baz);
+    public __construct(Baz baz);
 }
 
 class Foo {
 
-    public __contstruct(Bar bar);
+    public __construct(Bar bar);
 }
 
 $container = new \JBuncle\SimpleDic\Container();
