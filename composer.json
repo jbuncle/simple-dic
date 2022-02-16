@@ -32,5 +32,10 @@
     "require": {
         "php": ">=7.1",
         "psr/container": "^2.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
     }
 }
